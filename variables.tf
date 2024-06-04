@@ -1,12 +1,16 @@
+variable "region" {
+  description = "The AWS region to deploy in"
+  type        = string
+  default     = "us-east-1"
+}
+
 variable "access_key" {
-    type = string
+  description = "The AWS access key"
+  type        = string
 }
 
 variable "secret_key" {
-    type = string
-}
-
-variable "region" {
-    type = string
-    default = "<%=customOptions.awsRegion%>"
+  description = "The AWS secret key"
+  type        = string
+  sensitive   = true
 }
