@@ -23,7 +23,7 @@ variable "secret_key" {
 
 variable "region" {
     type = string
-    default = "<%=customOptions.awsRegion%>"
+    default = "us-east-1"
 }
 
 resource "aws_vpc" "vpc" {
