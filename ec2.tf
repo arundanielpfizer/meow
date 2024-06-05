@@ -18,3 +18,15 @@ resource "aws_instance" "example" {
   ami           = "ami-00beae93a2d981137"
   instance_type = "t2.micro"
 }
+
+
+variable "access_key" {
+  description = "The AWS access key"
+  type        = string
+}
+
+variable "secret_key" {
+  description = "The AWS secret key"
+  type        = string
+  sensitive   = true
+}
