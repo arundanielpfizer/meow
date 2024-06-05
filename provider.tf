@@ -1,32 +1,28 @@
-/* terraform {
-    required_providers {
-        aws = {
-            source = "hashicorp/aws"
-            version = "~> 3.0"
-        }
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = "5.52.0"
     }
+  }
 }
- */
 
-variable "region" {
-  description = "The AWS region to deploy in"
-  type        = string
-  default     = "us-east-1"
+#aws stuff
+provider "aws" {
+    region = var.region
+    access_key = var.access_key
+    secret_key = var.secret_key
 }
 
 variable "access_key" {
-  description = "The AWS access key"
-  type        = string
+    type = string
 }
 
 variable "secret_key" {
-  description = "The AWS secret key"
-  type        = string
-  sensitive   = true
+    type = string
 }
 
-provider "aws" {
-    region = var.region
-  access_key = var.access_key
-  secret_key = var.secret_key
+variable "region" {
+    type = string
+    default = "us-east-1"
 }
