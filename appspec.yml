@@ -4,6 +4,9 @@ files:
   - source: /
     destination: /var/www/html
     overwrite: yes
+    ignore:
+      - .gitignore
+      - README.md
 hooks:
   AfterInstall:
     - location: scripts/restart_server.sh
