@@ -1,6 +1,6 @@
 version: 0.0
 os: linux
 files:
-  - source: src/
-    destination: /var/www/html/src
+  - source: index.html
+    destination: /var/www/html
     overwrite: yes
