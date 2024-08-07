@@ -1,0 +1,144 @@
+To automatically update your EC2 instance with new HTML code from a GitHub branch, you can set up a continuous deployment pipeline. Here's a step-by-step guide to achieving this:
+
+Step 1: Prepare Your GitHub Repository
+Create a GitHub Repository:
+Go to GitHub and create a new repository for your website code.
+Add Your Website Code:
+
+Clone the repository to your local machine:
+git clone https://github.com/your-username/your-repo.git
+cd your-repo
+Add your HTML code to the repository. Create an index.html file as an example:
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Website</title>
+</head>
+<body>
+    <h1>Welcome to My Website!</h1>
+</body>
+</html>
+Push Your Code to GitHub:
+
+sh
+Copy code
+git add .
+git commit -m "Initial commit"
+git push origin main
+Step 2: Set Up Your EC2 Instance
+SSH into Your EC2 Instance:
+
+Use the SSH command as described earlier to access your instance.
+Install Git:
+
+sh
+Copy code
+sudo yum install -y git
+Clone Your Repository to the Web Directory:
+
+sh
+Copy code
+sudo git clone https://github.com/your-username/your-repo.git /var/www/html
+Set Permissions:
+
+sh
+Copy code
+sudo chown -R ec2-user:ec2-user /var/www/html
+Step 3: Set Up a GitHub Webhook
+Install Webhook Service:
+
+You can use a simple script on the EC2 instance to listen for webhook events. However, for better security and scalability, consider using a service like ngrok to expose your local server to the internet temporarily for testing.
+Configure Webhook Script on EC2:
+
+Create a script on your EC2 instance to pull the latest changes:
+sh
+Copy code
+sudo vi /usr/local/bin/update_website.sh
+Add the following content to the script:
+sh
+Copy code
+#!/bin/bash
+cd /var/www/html
+git pull origin main
+Make the script executable:
+sh
+Copy code
+sudo chmod +x /usr/local/bin/update_website.sh
+Configure Webhook Listener:
+
+Install a simple webhook listener using Python's http.server:
+sh
+Copy code
+sudo yum install -y python3
+Create a Python script to listen for GitHub webhook events:
+sh
+Copy code
+sudo vi /usr/local/bin/webhook_listener.py
+Add the following content:
+python
+Copy code
+#!/usr/bin/env python3
+
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import subprocess
+
+class WebhookHandler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        # Run the update script on receiving a webhook event
+        subprocess.run(['/usr/local/bin/update_website.sh'], shell=True)
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Webhook received and processed.")
+
+def run(server_class=HTTPServer, handler_class=WebhookHandler, port=8000):
+    server_address = ('', port)
+    httpd = server_class(server_address, handler_class)
+    httpd.serve_forever()
+
+if __name__ == "__main__":
+    run()
+Make the script executable:
+sh
+Copy code
+sudo chmod +x /usr/local/bin/webhook_listener.py
+Run the Webhook Listener:
+
+Run the webhook listener in the background:
+sh
+Copy code
+nohup python3 /usr/local/bin/webhook_listener.py &
+Configure GitHub Webhook:
+
+Go to your GitHub repository.
+Click on "Settings" > "Webhooks" > "Add webhook."
+Set the "Payload URL" to your EC2 instance's public DNS with the port number (e.g., http://your-public-dns:8000).
+Set "Content type" to application/json.
+Choose "Just the push event" under "Which events would you like to trigger this webhook?"
+Click "Add webhook."
+Step 4: Automate with Systemd (Optional)
+For better reliability, you can set up the webhook listener to start on boot using systemd.
+
+Create a Systemd Service:
+
+Create a service file for the webhook listener:
+sh
+Copy code
+sudo vi /etc/systemd/system/webhook_listener.service
+Add the following content:
+ini
+Copy code
+[Unit]
+Description=GitHub Webhook Listener
+
+[Service]
+ExecStart=/usr/bin/python3 /usr/local/bin/webhook_listener.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+Enable and Start the Service:
+
+sh
+Copy code
+sudo systemctl enable webhook_listener
+sudo systemctl start webhook_listener
