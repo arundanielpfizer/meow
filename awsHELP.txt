@@ -1,0 +1,128 @@
+Using AWS CodeBuild and CodeDeploy for automated deployments can be a more robust and scalable solution compared to manual webhooks. Here’s a step-by-step guide on how to set this up:
+
+Overview
+AWS CodePipeline: Automates the build and deployment process.
+AWS CodeBuild: Compiles the code, runs tests, and prepares artifacts for deployment.
+AWS CodeDeploy: Deploys the artifacts to your EC2 instance.
+Step 1: Set Up Your GitHub Repository
+Ensure your code is in a GitHub repository. The following steps will show how to configure AWS services to automatically deploy changes from this repository.
+
+Step 2: Set Up an S3 Bucket (Optional)
+You might want to store build artifacts in an S3 bucket before deployment:
+
+Create an S3 Bucket:
+Go to the S3 console.
+Click "Create bucket."
+Name your bucket (e.g., my-deployment-artifacts).
+Choose a region and create the bucket.
+Step 3: Configure AWS CodeBuild
+Create a Build Project:
+
+Go to the AWS CodeBuild console.
+Click "Create build project."
+Enter a project name (e.g., MyWebsiteBuild).
+Under "Source," choose "GitHub" and connect your repository.
+Under "Environment," choose the runtime environment (e.g., Amazon Linux, standard image).
+Configure "Service role" to allow CodeBuild access to required resources.
+Under "Buildspec," choose "Insert build commands" and add the following:
+yaml
+Copy code
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Installing dependencies
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Compiling the code...
+      - # Here you can add any build commands if necessary
+artifacts:
+  files:
+    - '**/*'
+  discard-paths: yes
+  base-directory: # Specify if you have a specific directory
+Under "Artifacts," choose "Amazon S3" (optional) and select your bucket.
+Create a Buildspec File (if using a file in your repo):
+
+Create a buildspec.yml file in your repository with the above content if you didn't specify commands directly in CodeBuild.
+Step 4: Set Up AWS CodeDeploy
+Install CodeDeploy Agent on EC2:
+
+SSH into your EC2 instance.
+Run the following commands to install the CodeDeploy agent:
+sh
+Copy code
+sudo yum update -y
+sudo yum install ruby -y
+sudo yum install wget -y
+cd /home/ec2-user
+wget https://aws-codedeploy-us-west-2.s3.amazonaws.com/latest/install
+chmod +x ./install
+sudo ./install auto
+sudo service codedeploy-agent start
+Create a CodeDeploy Application:
+
+Go to the AWS CodeDeploy console.
+Click "Create application."
+Name your application and choose "EC2/On-premises."
+Create a Deployment Group:
+
+Within the application, click "Create deployment group."
+Name the deployment group (e.g., MyWebsiteDeploymentGroup).
+Select a service role that allows CodeDeploy access to your EC2 instance.
+Under "Environment configuration," choose "Amazon EC2 instances" and specify the instance tag or Auto Scaling group that identifies your instance.
+Under "Deployment settings," choose "In-place" or "Blue/Green" deployment type depending on your needs.
+Add an AppSpec File:
+
+Create an appspec.yml file in your GitHub repository:
+yaml
+Copy code
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /var/www/html
+hooks:
+  AfterInstall:
+    - location: scripts/restart_server.sh
+      timeout: 300
+      runas: root
+Add a simple script (restart_server.sh) in a scripts directory to restart the HTTP server:
+sh
+Copy code
+#!/bin/bash
+systemctl restart httpd
+Step 5: Set Up AWS CodePipeline
+Create a Pipeline:
+
+Go to the AWS CodePipeline console.
+Click "Create pipeline."
+Name your pipeline (e.g., MyWebsitePipeline).
+Configure the Source Stage:
+
+Select "GitHub" as the source provider.
+Connect to your GitHub account and select the repository and branch.
+Add Build Stage:
+
+Add AWS CodeBuild as the build provider.
+Select the build project you created earlier.
+Add Deploy Stage:
+
+Choose "AWS CodeDeploy" as the deploy provider.
+Select the application name and deployment group you created.
+Create the Pipeline:
+
+Review the configuration and create the pipeline.
+Step 6: Test the Setup
+Make a Change to Your Code:
+
+Modify your index.html or any other file in your GitHub repository.
+Commit and push the changes.
+Monitor the Pipeline:
+
+Go to the AWS CodePipeline console and watch the pipeline execute.
+The pipeline should automatically build and deploy your changes to the EC2 instance.
+Conclusion
+With this setup, changes pushed to your GitHub repository are automatically deployed to your EC2 instance using AWS CodeBuild, CodeDeploy, and CodePipeline. This approach provides a scalable and efficient CI/CD pipeline. If you have any questions or need further customization, feel free to ask!
